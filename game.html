@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cyber Snow Expanse</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    }
+
+    body {
+      overflow: hidden;
+      background: radial-gradient(circle at top, #1a355a, #02030a 55%, #000000 100%);
+      color: #e6f1ff;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    #menu,
+    #hud,
+    #gameover,
+    #shop {
+      position: fixed;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    #menu,
+    #gameover,
+    #shop {
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .panel {
+      pointer-events: auto;
+      padding: 24px 32px;
+      border-radius: 16px;
+      border: 1px solid rgba(155, 236, 255, 0.7);
+      background: radial-gradient(circle at top left, rgba(92, 225, 255, 0.16), rgba(0, 0, 0, 0.9));
+      box-shadow:
+        0 0 40px rgba(0, 255, 255, 0.2),
+        0 0 120px rgba(0, 153, 255, 0.15);
+      backdrop-filter: blur(10px);
+      min-width: 340px;
+      max-width: 520px;
+    }
+
+    .panel h1,
+    .panel h2 {
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-size: 14px;
+      color: #8fe4ff;
+      margin-bottom: 16px;
+    }
+
+    .panel h1 span,
+    .panel h2 span {
+      color: #ffffff;
+    }
+
+    .panel p {
+      font-size: 13px;
+      line-height: 1.6;
+      color: #c3d8ff;
+      margin-bottom: 12px;
+    }
+
+    .panel ul {
+      list-style: none;
+      margin: 12px 0 18px;
+      font-size: 12px;
+      color: #bcd4ff;
+    }
+
+    .panel ul li {
+      margin-bottom: 4px;
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    .glitch {
+      position: relative;
+      display: inline-block;
+      font-size: 22px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      color: #e6f5ff;
+    }
+
+    .glitch::before,
+    .glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0;
+      left: 0;
+      opacity: 0.55;
+      mix-blend-mode: screen;
+      pointer-events: none;
+    }
+
+    .glitch::before {
+      transform: translate(-1px, 0);
+      text-shadow: -1px 0 #00e5ff;
+      animation: glitchLeft 1.6s infinite linear alternate-reverse;
+    }
+
+    .glitch::after {
+      transform: translate(1px, 0);
+      text-shadow: 1px 0 #ff00ff;
+      animation: glitchRight 1.3s infinite linear alternate-reverse;
+    }
+
+    @keyframes glitchLeft {
+      0% { transform: translate(-0.5px, 0); }
+      20% { transform: translate(-1.5px, -0.4px); }
+      40% { transform: translate(-0.4px, 0.4px); }
+      60% { transform: translate(-2px, -0.2px); }
+      80% { transform: translate(-0.6px, 0.6px); }
+      100% { transform: translate(-1.2px, 0); }
+    }
+
+    @keyframes glitchRight {
+      0% { transform: translate(0.5px, 0); }
+      20% { transform: translate(1.5px, 0.4px); }
+      40% { transform: translate(0.4px, -0.4px); }
+      60% { transform: translate(2px, 0.2px); }
+      80% { transform: translate(0.6px, -0.6px); }
+      100% { transform: translate(1.2px, 0); }
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 22px;
+      border-radius: 999px;
+      border: 1px solid rgba(165, 245, 255, 0.9);
+      background: radial-gradient(circle at top left, rgba(36, 255, 255, 0.3), rgba(0, 0, 0, 0.9));
+      color: #e7fbff;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.35);
+    }
+
+    .btn:hover {
+      transform: translateY(-1px) scale(1.02);
+      box-shadow:
+        0 0 30px rgba(0, 255, 255, 0.5),
+        0 0 80px rgba(59, 130, 246, 0.4);
+      border-color: #ffffff;
+    }
+
+    .btn-secondary {
+      background: radial-gradient(circle at bottom right, rgba(86, 94, 255, 0.3), rgba(0, 0, 0, 0.9));
+      border-color: rgba(148, 163, 255, 0.9);
+      box-shadow: 0 0 12px rgba(129, 140, 248, 0.5);
+      margin-left: 8px;
+    }
+
+    #hud {
+      inset: 12px 20px auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: none;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+    }
+
+    #hud-left, #hud-right {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .hud-pill {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 233, 255, 0.7);
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(8, 47, 73, 0.96));
+      backdrop-filter: blur(8px);
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.35);
+      pointer-events: auto;
+    }
+
+    .hud-label {
+      opacity: 0.6;
+      margin-right: 6px;
+    }
+
+    .hud-value {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      color: #e0f7ff;
+    }
+
+    #crosshair {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      width: 12px;
+      height: 12px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    #crosshair::before,
+    #crosshair::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 10px;
+      height: 1px;
+      background: rgba(226, 255, 255, 0.9);
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 6px rgba(45, 212, 191, 0.8);
+    }
+
+    #crosshair::after {
+      transform: translate(-50%, -50%) rotate(90deg);
+    }
+
+    .hint {
+      font-size: 10px;
+      opacity: 0.55;
+      margin-top: 6px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .stat-critical {
+      color: #f97373;
+    }
+
+    .stat-good {
+      color: #4ade80;
+    }
+
+    .shop-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .shop-row span {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    .shop-cost {
+      opacity: 0.6;
+      margin-right: 6px;
+    }
+
+    .shop-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .shop-title {
+      font-size: 13px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #a5f3fc;
+      margin-bottom: 4px;
+    }
+
+    #gameover .panel {
+      text-align: center;
+    }
+
+    #gameover .panel p {
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+  <!-- MENU -->
+  <div id="menu">
+    <div class="panel">
+      <div class="glitch" data-text="NEON WHITE EXILE">NEON WHITE EXILE</div>
+      <h1><span>CYBER SNOWFIELD</span> // PROTOCOL ZERO</h1>
+      <p>
+        First-person survival in an infinite frozen wasteland. Neon-lit ruins, hostile constructs,
+        and no extraction window. Last as long as you can – the longer the run, the more vicious the AI becomes.
+      </p>
+
+      <p>Controls:</p>
+      <ul>
+        <li>W A S D – move</li>
+        <li>Space – jump</li>
+        <li>Mouse move – look</li>
+        <li>Click – shoot</li>
+        <li>Q – overclock burst (speed dash)</li>
+        <li>E – interact / open terminals</li>
+        <li>F – flashlight</li>
+        <li>G – grenade</li>
+        <li>B – buy / open cyber shop</li>
+      </ul>
+
+      <button id="startBtn" class="btn">Enter Expanse</button>
+      <button id="howBtn" class="btn btn-secondary">Quick Primer</button>
+      <p class="hint">
+        After pressing start, click once in the world to lock your cursor. ESC to unlock.
+      </p>
+    </div>
+  </div>
+
+  <!-- HUD -->
+  <div id="hud" style="display:none;">
+    <div id="hud-left">
+      <div class="hud-pill">
+        <span class="hud-label">Time</span>
+        <span id="timeText" class="hud-value">00:00</span>
+      </div>
+      <div class="hud-pill">
+        <span class="hud-label">Score</span>
+        <span id="scoreText" class="hud-value">0</span>
+      </div>
+      <div class="hud-pill">
+        <span class="hud-label">HP</span>
+        <span id="hpText" class="hud-value stat-good">100</span>
+      </div>
+    </div>
+
+    <div id="hud-right">
+      <div class="hud-pill">
+        <span class="hud-label">Ammo</span>
+        <span id="ammoText" class="hud-value">24</span>
+      </div>
+      <div class="hud-pill">
+        <span class="hud-label">Grenades</span>
+        <span id="grenadeText" class="hud-value">3</span>
+      </div>
+      <div class="hud-pill">
+        <span class="hud-label">Wave</span>
+        <span id="waveText" class="hud-value">1</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CROSSHAIR -->
+  <div id="crosshair" style="display:none;"></div>
+
+  <!-- SHOP -->
+  <div id="shop" style="display:none;">
+    <div class="panel">
+      <div class="shop-title">Cybernetic Exchange Node</div>
+      <p>Spend score to buy upgrades. World does <span class="stat-critical">not</span> pause here; enemies still move.</p>
+      <div class="shop-row">
+        <span>+12 Ammo</span>
+        <div class="shop-actions">
+          <span class="shop-cost">Cost: 40</span>
+          <button class="btn btn-secondary" id="buyAmmoBtn">Buy</button>
+        </div>
+      </div>
+      <div class="shop-row">
+        <span>+1 Grenade</span>
+        <div class="shop-actions">
+          <span class="shop-cost">Cost: 75</span>
+          <button class="btn btn-secondary" id="buyGrenadeBtn">Buy</button>
+        </div>
+      </div>
+      <div class="shop-row">
+        <span>Patch +25 HP</span>
+        <div class="shop-actions">
+          <span class="shop-cost">Cost: 60</span>
+          <button class="btn btn-secondary" id="buyHealthBtn">Buy</button>
+        </div>
+      </div>
+      <div class="shop-row">
+        <span>Flashlight Overclock (brighter cone)</span>
+        <div class="shop-actions">
+          <span class="shop-cost">Cost: 120</span>
+          <button class="btn btn-secondary" id="buyFlashBtn">Buy</button>
+        </div>
+      </div>
+      <button class="btn" id="closeShopBtn">Exit Shop (B)</button>
+      <p class="hint">Tip: dip into ruins and LOS enemies before opening this.</p>
+    </div>
+  </div>
+
+  <!-- GAME OVER -->
+  <div id="gameover" style="display:none;">
+    <div class="panel">
+      <div class="glitch" data-text="SESSION TERMINATED">SESSION TERMINATED</div>
+      <h2><span>NEURAL LINK</span> LOST</h2>
+      <p>Run Time: <span id="finalTimeText" class="hud-value">00:00</span></p>
+      <p>Score: <span id="finalScoreText" class="hud-value">0</span></p>
+      <p>Max Wave: <span id="finalWaveText" class="hud-value">1</span></p>
+      <button id="restartBtn" class="btn">Reboot Simulation</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+    import { PointerLockControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/PointerLockControls.js';
+
+    // -----------------------------
+    // DOM HOOKS
+    // -----------------------------
+    const menuEl = document.getElementById('menu');
+    const hudEl = document.getElementById('hud');
+    const gameoverEl = document.getElementById('gameover');
+    const shopEl = document.getElementById('shop');
+    const crosshairEl = document.getElementById('crosshair');
+
+    const timeText = document.getElementById('timeText');
+    const scoreText = document.getElementById('scoreText');
+    const hpText = document.getElementById('hpText');
+    const ammoText = document.getElementById('ammoText');
+    const grenadeText = document.getElementById('grenadeText');
+    const waveText = document.getElementById('waveText');
+
+    const finalTimeText = document.getElementById('finalTimeText');
+    const finalScoreText = document.getElementById('finalScoreText');
+    const finalWaveText = document.getElementById('finalWaveText');
+
+    const startBtn = document.getElementById('startBtn');
+    const howBtn = document.getElementById('howBtn');
+    const restartBtn = document.getElementById('restartBtn');
+
+    const buyAmmoBtn = document.getElementById('buyAmmoBtn');
+    const buyGrenadeBtn = document.getElementById('buyGrenadeBtn');
+    const buyHealthBtn = document.getElementById('buyHealthBtn');
+    const buyFlashBtn = document.getElementById('buyFlashBtn');
+    const closeShopBtn = document.getElementById('closeShopBtn');
+
+    // -----------------------------
+    // THREE.JS CORE
+    // -----------------------------
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x030512);
+    scene.fog = new THREE.FogExp2(0x050716, 0.0023);
+
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2500);
+    camera.position.set(0, 6, 0); // eye level above "block" terrain
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new PointerLockControls(camera, renderer.domElement);
+    scene.add(controls.getObject());
+
+    // -----------------------------
+    // LIGHTING / FLASHLIGHT
+    // -----------------------------
+    const ambientLight = new THREE.AmbientLight(0x4f7cff, 0.18);
+    scene.add(ambientLight);
+
+    const skyLight = new THREE.DirectionalLight(0xbfe6ff, 0.28);
+    skyLight.position.set(120, 260, -80);
+    skyLight.castShadow = true;
+    const d = 250;
+    skyLight.shadow.camera.left = -d;
+    skyLight.shadow.camera.right = d;
+    skyLight.shadow.camera.top = d;
+    skyLight.shadow.camera.bottom = -d;
+    skyLight.shadow.mapSize.set(2048, 2048);
+    scene.add(skyLight);
+
+    const flashlight = new THREE.SpotLight(0x9ee7ff, 2.2, 220, Math.PI / 8, 0.5, 1.0);
+    flashlight.castShadow = true;
+    flashlight.visible = false;
+    flashlight.position.set(0, 0, 0);
+    camera.add(flashlight);
+    const flashlightTarget = new THREE.Object3D();
+    flashlightTarget.position.set(0, 0, -1);
+    camera.add(flashlightTarget);
+    flashlight.target = flashlightTarget;
+    scene.add(camera);
+
+    let flashlightLevel = 1; // upgrades boost this
+
+    // -----------------------------
+    // CYBER SKY + SNOWFIELD TERRAIN
+    // -----------------------------
+    const worldSize = 2400;
+    const snowGeometry = new THREE.PlaneGeometry(worldSize, worldSize, 64, 64);
+    const snowMaterial = new THREE.MeshStandardMaterial({
+      color: 0xf4f7ff,
+      roughness: 0.9,
+      metalness: 0.02
+    });
+
+    // Add some fake subtle "height" via vertex perturbation
+    const posAttr = snowGeometry.attributes.position;
+    for (let i = 0; i < posAttr.count; i++) {
+      const y = (Math.sin(posAttr.getX(i) * 0.003) * Math.cos(posAttr.getY(i) * 0.003)) * 3;
+      posAttr.setZ(i, y);
+    }
+    snowGeometry.computeVertexNormals();
+
+    const ground = new THREE.Mesh(snowGeometry, snowMaterial);
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    // Neon "circuit" lines on the ground for cyber vibe
+    const gridHelper = new THREE.GridHelper(worldSize, 120, 0x42e9ff, 0x0b1120);
+    gridHelper.position.y = 0.05;
+    gridHelper.material.opacity = 0.18;
+    gridHelper.material.transparent = true;
+    scene.add(gridHelper);
+
+    // -----------------------------
+    // STRUCTURES (Minecraft-ish ruins / towers)
+    // -----------------------------
+    const structures = new THREE.Group();
+    scene.add(structures);
+
+    const blockGeo = new THREE.BoxGeometry(6, 6, 6);
+    const blockMatSnow = new THREE.MeshStandardMaterial({
+      color: 0xe5f2ff,
+      roughness: 0.85,
+      metalness: 0.05
+    });
+    const blockMatNeon = new THREE.MeshStandardMaterial({
+      color: 0x39e5ff,
+      emissive: 0x39e5ff,
+      emissiveIntensity: 1.3,
+      roughness: 0.4,
+      metalness: 0.7
+    });
+
+    function spawnStructureCluster(x, z) {
+      const cluster = new THREE.Group();
+      const heightLevels = 2 + Math.floor(Math.random() * 5);
+
+      for (let i = 0; i < heightLevels; i++) {
+        const block = new THREE.Mesh(blockGeo, i % 2 === 0 ? blockMatSnow : blockMatNeon);
+        block.castShadow = true;
+        block.receiveShadow = true;
+        block.position.set(
+          (Math.random() - 0.5) * 10,
+          i * 6 + 3,
+          (Math.random() - 0.5) * 10
+        );
+        cluster.add(block);
+      }
+
+      cluster.position.set(x, 0, z);
+      structures.add(cluster);
+    }
+
+    // Scatter clusters in a big ring around spawn
+    for (let i = 0; i < 80; i++) {
+      const radius = 80 + Math.random() * 500;
+      const angle = Math.random() * Math.PI * 2;
+      const x = Math.cos(angle) * radius;
+      const z = Math.sin(angle) * radius;
+      spawnStructureCluster(x, z);
+    }
+
+    // -----------------------------
+    // SNOW PARTICLES (infinite-feel loop)
+    // -----------------------------
+    const snowParticleCount = 2000;
+    const snowParticleGeo = new THREE.BufferGeometry();
+    const snowPositions = new Float32Array(snowParticleCount * 3);
+
+    function randomSnowPosition(i) {
+      const range = 240;
+      snowPositions[i] = (Math.random() - 0.5) * range;
+      snowPositions[i + 1] = Math.random() * 120 + 10; // height
+      snowPositions[i + 2] = (Math.random() - 0.5) * range;
+    }
+
+    for (let i = 0; i < snowParticleCount * 3; i += 3) {
+      randomSnowPosition(i);
+    }
+
+    snowParticleGeo.setAttribute('position', new THREE.BufferAttribute(snowPositions, 3));
+    const snowParticleMat = new THREE.PointsMaterial({
+      color: 0xe5f0ff,
+      size: 0.8,
+      sizeAttenuation: true,
+      transparent: true,
+      opacity: 0.75
+    });
+
+    const snowParticles = new THREE.Points(snowParticleGeo, snowParticleMat);
+    snowParticles.position.y = 0;
+    scene.add(snowParticles);
+
+    // -----------------------------
+    // ENEMY MODEL (humanoid, not just a cube)
+    // -----------------------------
+    const enemyRoot = new THREE.Group();
+
+    function createEnemyModel() {
+      const enemy = new THREE.Group();
+
+      const bodyMat = new THREE.MeshStandardMaterial({
+        color: 0x111827,
+        roughness: 0.45,
+        metalness: 0.9
+      });
+
+      const accentMat = new THREE.MeshStandardMaterial({
+        color: 0x06b6d4,
+        emissive: 0x22eaff,
+        emissiveIntensity: 1.8,
+        roughness: 0.2,
+        metalness: 1.0
+      });
+
+      // Torso
+      const torsoGeo = new THREE.BoxGeometry(3, 4, 2);
+      const torso = new THREE.Mesh(torsoGeo, bodyMat);
+      torso.castShadow = true;
+      torso.position.y = 6;
+      enemy.add(torso);
+
+      // Head
+      const headGeo = new THREE.BoxGeometry(2.4, 2.4, 2.4);
+      const head = new THREE.Mesh(headGeo, bodyMat);
+      head.castShadow = true;
+      head.position.y = 9.2;
+      enemy.add(head);
+
+      // Neon visor strip
+      const visorGeo = new THREE.BoxGeometry(2.2, 0.5, 0.3);
+      const visor = new THREE.Mesh(visorGeo, accentMat);
+      visor.position.set(0, 9.1, 1.4);
+      visor.castShadow = true;
+      enemy.add(visor);
+
+      // Shoulders / arm cores
+      const shoulderGeo = new THREE.BoxGeometry(4, 0.8, 1.8);
+      const shoulders = new THREE.Mesh(shoulderGeo, bodyMat);
+      shoulders.position.y = 7.7;
+      enemy.add(shoulders);
+
+      // Arms
+      const upperArmGeo = new THREE.BoxGeometry(0.9, 2.0, 0.9);
+      const lowerArmGeo = new THREE.BoxGeometry(0.8, 2.0, 0.8);
+
+      const leftUpperArm = new THREE.Mesh(upperArmGeo, bodyMat);
+      leftUpperArm.position.set(-2, 6.8, 0);
+      const leftLowerArm = new THREE.Mesh(lowerArmGeo, bodyMat);
+      leftLowerArm.position.set(-2, 5.1, 0);
+
+      const rightUpperArm = new THREE.Mesh(upperArmGeo, bodyMat);
+      rightUpperArm.position.set(2, 6.8, 0);
+      const rightLowerArm = new THREE.Mesh(lowerArmGeo, bodyMat);
+      rightLowerArm.position.set(2, 5.1, 0);
+
+      leftUpperArm.castShadow = leftLowerArm.castShadow = true;
+      rightUpperArm.castShadow = rightLowerArm.castShadow = true;
+
+      enemy.add(leftUpperArm, leftLowerArm, rightUpperArm, rightLowerArm);
+
+      // Legs
+      const upperLegGeo = new THREE.BoxGeometry(1.1, 2.5, 1.1);
+      const lowerLegGeo = new THREE.BoxGeometry(1.0, 2.4, 1.0);
+
+      const leftUpperLeg = new THREE.Mesh(upperLegGeo, bodyMat);
+      leftUpperLeg.position.set(-0.9, 3.4, 0);
+      const leftLowerLeg = new THREE.Mesh(lowerLegGeo, bodyMat);
+      leftLowerLeg.position.set(-0.9, 1.4, 0);
+
+      const rightUpperLeg = new THREE.Mesh(upperLegGeo, bodyMat);
+      rightUpperLeg.position.set(0.9, 3.4, 0);
+      const rightLowerLeg = new THREE.Mesh(lowerLegGeo, bodyMat);
+      rightLowerLeg.position.set(0.9, 1.4, 0);
+
+      leftUpperLeg.castShadow = leftLowerLeg.castShadow = true;
+      rightUpperLeg.castShadow = rightLowerLeg.castShadow = true;
+
+      enemy.add(leftUpperLeg, leftLowerLeg, rightUpperLeg, rightLowerLeg);
+
+      // Chest neon core
+      const coreGeo = new THREE.BoxGeometry(0.8, 1.1, 0.4);
+      const core = new THREE.Mesh(coreGeo, accentMat);
+      core.position.set(0, 6.5, 1.1);
+      core.castShadow = true;
+      enemy.add(core);
+
+      // Slight bobbing pivot
+      const pivot = new THREE.Group();
+      pivot.add(enemy);
+      enemy.position.y = 0;
+
+      return pivot;
+    }
+
+    // Enemy containers
+    const enemies = [];
+    const enemyGroup = new THREE.Group();
+    scene.add(enemyGroup);
+
+    function spawnEnemy() {
+      const model = createEnemyModel();
+      const angle = Math.random() * Math.PI * 2;
+      const minDist = 40;
+      const maxDist = 140;
+      const dist = minDist + Math.random() * (maxDist - minDist);
+
+      const px = controls.getObject().position.x + Math.cos(angle) * dist;
+      const pz = controls.getObject().position.z + Math.sin(angle) * dist;
+
+      model.position.set(px, 0, pz);
+      enemyGroup.add(model);
+
+      const enemy = {
+        model,
+        speed: 8 + Math.random() * 4, // will scale with wave
+        hp: 3 + Math.floor(Math.random() * 3),
+        bobOffset: Math.random() * Math.PI * 2
+      };
+      enemies.push(enemy);
+    }
+
+    // Initial enemy pool
+    for (let i = 0; i < 8; i++) spawnEnemy();
+
+    // -----------------------------
+    // BULLETS + GRENADES
+    // -----------------------------
+    const bullets = [];
+    const grenades = [];
+
+    const bulletGeo = new THREE.CylinderGeometry(0.05, 0.05, 3);
+    bulletGeo.rotateZ(Math.PI / 2);
+    const bulletMat = new THREE.MeshBasicMaterial({
+      color: 0x99f6ff
+    });
+
+    const grenadeGeo = new THREE.SphereGeometry(0.5, 16, 16);
+    const grenadeMat = new THREE.MeshStandardMaterial({
+      color: 0x0f172a,
+      emissive: 0x38bdf8,
+      emissiveIntensity: 1.2,
+      roughness: 0.4,
+      metalness: 1.0
+    });
+
+    const explosionSphereGeo = new THREE.SphereGeometry(1, 16, 16);
+    const explosionSphereMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.8
+    });
+
+    // -----------------------------
+    // PLAYER STATE
+    // -----------------------------
+    let gameState = 'menu'; // 'menu' | 'playing' | 'dead'
+    let elapsedTime = 0;
+    let score = 0;
+    let hp = 100;
+    let ammo = 24;
+    let grenadesCount = 3;
+    let wave = 1;
+
+    let lastTime = performance.now();
+    let fireCooldown = 0;
+    let grenadeCooldown = 0;
+    let dashCooldown = 0;
+
+    const keys = {};
+    let velocityY = 0;
+    const gravity = -40;
+    const jumpStrength = 16;
+    let onGround = true;
+
+    const moveSpeedBase = 18;
+    let dashTimer = 0;
+
+    // -----------------------------
+    // INPUT HANDLERS
+    // -----------------------------
+    window.addEventListener('resize', onWindowResize);
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('keyup', onKeyUp);
+    document.addEventListener('mousedown', onMouseDown);
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function onKeyDown(e) {
+      keys[e.code] = true;
+
+      if (gameState !== 'playing') return;
+
+      if (e.code === 'Space') {
+        if (onGround) {
+          velocityY = jumpStrength;
+          onGround = false;
+        }
+      }
+
+      if (e.code === 'KeyF') {
+        flashlight.visible = !flashlight.visible;
+      }
+
+      if (e.code === 'KeyB') {
+        toggleShop();
+      }
+
+      if (e.code === 'KeyQ') {
+        // Overclock dash
+        if (dashCooldown <= 0 && dashTimer <= 0) {
+          dashTimer = 0.25; // short burst
+          dashCooldown = 6; // seconds
+        }
+      }
+
+      if (e.code === 'KeyG') {
+        throwGrenade();
+      }
+
+      if (e.code === 'KeyE') {
+        // Could be used for terminals; for now ping interaction text maybe later
+        // Placeholder for expansion
+      }
+    }
+
+    function onKeyUp(e) {
+      keys[e.code] = false;
+    }
+
+    function onMouseDown(e) {
+      if (gameState !== 'playing') return;
+      if (!controls.isLocked) {
+        controls.lock();
+        return;
+      }
+
+      if (e.button === 0) {
+        shoot();
+      }
+    }
+
+    controls.addEventListener('lock', () => {
+      // optional: UI change when locked
+    });
+
+    controls.addEventListener('unlock', () => {
+      // optional: UI change when unlocked
+    });
+
+    // -----------------------------
+    // SHOOTING
+    // -----------------------------
+    const raycaster = new THREE.Raycaster();
+
+    function shoot() {
+      if (fireCooldown > 0 || ammo <= 0) return;
+      fireCooldown = 0.14;
+      ammo -= 1;
+      ammoText.textContent = ammo.toString();
+
+      // Visual bullet tracer
+      const bullet = new THREE.Mesh(bulletGeo, bulletMat);
+      bullet.position.copy(camera.position);
+      bullet.castShadow = false;
+      scene.add(bullet);
+
+      const dir = new THREE.Vector3();
+      camera.getWorldDirection(dir);
+      dir.normalize();
+
+      bullets.push({
+        mesh: bullet,
+        dir: dir.clone(),
+        speed: 220,
+        life: 0
+      });
+
+      // Hit scan with raycaster
+      raycaster.set(camera.position, dir);
+      const enemyMeshes = enemyGroup.children;
+      const intersects = raycaster.intersectObjects(enemyMeshes, true);
+
+      if (intersects.length > 0) {
+        const hit = intersects[0];
+        const rootEnemy = findEnemyRoot(hit.object);
+        if (rootEnemy) {
+          applyDamageToEnemy(rootEnemy, 1);
+        }
+      }
+    }
+
+    function findEnemyRoot(obj) {
+      while (obj && obj.parent) {
+        if (enemies.some(e => e.model === obj)) return obj;
+        obj = obj.parent;
+      }
+      return null;
+    }
+
+    function applyDamageToEnemy(enemyModel, dmg) {
+      const enemy = enemies.find(e => e.model === enemyModel);
+      if (!enemy) return;
+
+      enemy.hp -= dmg;
+      score += 10;
+      scoreText.textContent = score.toString();
+
+      if (enemy.hp <= 0) {
+        spawnDeathFlash(enemy.model.position);
+        enemyGroup.remove(enemy.model);
+        const idx = enemies.indexOf(enemy);
+        if (idx !== -1) enemies.splice(idx, 1);
+
+        // Respawn another enemy (increasing difficulty)
+        spawnEnemy();
+      }
+    }
+
+    function spawnDeathFlash(position) {
+      const flashGeo = new THREE.SphereGeometry(1.5, 16, 16);
+      const flashMat = new THREE.MeshBasicMaterial({
+        color: 0x9ffcff,
+        transparent: true,
+        opacity: 0.9
+      });
+      const flash = new THREE.Mesh(flashGeo, flashMat);
+      flash.position.copy(position).add(new THREE.Vector3(0, 6, 0));
+      scene.add(flash);
+
+      let t = 0;
+      const life = 0.3;
+      const updateFlash = (delta) => {
+        t += delta;
+        flash.scale.setScalar(1 + t * 6);
+        flash.material.opacity = Math.max(0, 0.9 - t * 3);
+        if (t >= life) {
+          scene.remove(flash);
+          flashCallbacks.splice(flashCallbacks.indexOf(updateFlash), 1);
+        }
+      };
+      flashCallbacks.push(updateFlash);
+    }
+
+    const flashCallbacks = [];
+
+    // -----------------------------
+    // GRENADES
+    // -----------------------------
+    function throwGrenade() {
+      if (grenadeCooldown > 0 || grenadesCount <= 0) return;
+
+      grenadesCount -= 1;
+      grenadeText.textContent = grenadesCount.toString();
+      grenadeCooldown = 1.8;
+
+      const grenade = new THREE.Mesh(grenadeGeo, grenadeMat);
+      grenade.castShadow = true;
+      grenade.position.copy(camera.position);
+      scene.add(grenade);
+
+      const dir = new THREE.Vector3();
+      camera.getWorldDirection(dir);
+      dir.normalize();
+
+      const horizontal = dir.clone();
+      horizontal.y = Math.max(0.2, dir.y + 0.4);
+      horizontal.normalize();
+
+      const speed = 35;
+      const vel = horizontal.multiplyScalar(speed);
+
+      grenades.push({
+        mesh: grenade,
+        vel,
+        life: 3,
+        exploded: false
+      });
+    }
+
+    function explodeGrenade(g) {
+      if (g.exploded) return;
+      g.exploded = true;
+
+      const explosion = new THREE.Mesh(explosionSphereGeo, explosionSphereMat.clone());
+      explosion.position.copy(g.mesh.position);
+      scene.add(explosion);
+
+      const radius = 18;
+
+      // Damage enemies in range
+      enemies.slice().forEach(enemy => {
+        const dist = enemy.model.position.distanceTo(explosion.position);
+        if (dist <= radius) {
+          applyDamageToEnemy(enemy.model, 10);
+        }
+      });
+
+      // Score bonus for multi-kills is already handled via applyDamage
+
+      let t = 0;
+      const life = 0.4;
+      const updateExplosion = (delta) => {
+        t += delta;
+        explosion.scale.setScalar(1 + t * 12);
+        explosion.material.opacity = Math.max(0, 0.8 - t * 2.5);
+        if (t >= life) {
+          scene.remove(explosion);
+          flashCallbacks.splice(flashCallbacks.indexOf(updateExplosion), 1);
+        }
+      };
+      flashCallbacks.push(updateExplosion);
+    }
+
+    // -----------------------------
+    // SHOP
+    // -----------------------------
+    let shopOpen = false;
+
+    function toggleShop() {
+      shopOpen = !shopOpen;
+      shopEl.style.display = shopOpen ? 'flex' : 'none';
+    }
+
+    buyAmmoBtn.addEventListener('click', () => {
+      const cost = 40;
+      if (score >= cost) {
+        score -= cost;
+        ammo += 12;
+        scoreText.textContent = score.toString();
+        ammoText.textContent = ammo.toString();
+      }
+    });
+
+    buyGrenadeBtn.addEventListener('click', () => {
+      const cost = 75;
+      if (score >= cost) {
+        score -= cost;
+        grenadesCount += 1;
+        scoreText.textContent = score.toString();
+        grenadeText.textContent = grenadesCount.toString();
+      }
+    });
+
+    buyHealthBtn.addEventListener('click', () => {
+      const cost = 60;
+      if (score >= cost) {
+        score -= cost;
+        hp = Math.min(100, hp + 25);
+        scoreText.textContent = score.toString();
+        hpText.textContent = hp.toString();
+        refreshHpColor();
+      }
+    });
+
+    buyFlashBtn.addEventListener('click', () => {
+      const cost = 120;
+      if (score >= cost && flashlightLevel < 3) {
+        score -= cost;
+        flashlightLevel += 1;
+        scoreText.textContent = score.toString();
+        flashlight.intensity = 2.2 + flashlightLevel * 0.7;
+        flashlight.angle = Math.PI / (8 - flashlightLevel);
+      }
+    });
+
+    closeShopBtn.addEventListener('click', () => {
+      toggleShop();
+    });
+
+    function refreshHpColor() {
+      if (hp > 60) {
+        hpText.classList.remove('stat-critical');
+        hpText.classList.add('stat-good');
+      } else if (hp > 30) {
+        hpText.classList.remove('stat-good');
+        hpText.classList.remove('stat-critical');
+      } else {
+        hpText.classList.add('stat-critical');
+        hpText.classList.remove('stat-good');
+      }
+    }
+
+    // -----------------------------
+    // GAME LOOP
+    // -----------------------------
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const now = performance.now();
+      const delta = Math.min((now - lastTime) / 1000, 0.08);
+      lastTime = now;
+
+      if (gameState === 'playing') {
+        updateGame(delta);
+      }
+
+      flashCallbacks.forEach(cb => cb(delta));
+      renderer.render(scene, camera);
+    }
+
+    function updateGame(delta) {
+      if (!shopOpen) {
+        handleMovement(delta);
+      }
+
+      updateTimer(delta);
+      updateSnow(delta);
+      updateEnemies(delta);
+      updateBullets(delta);
+      updateGrenades(delta);
+
+      if (fireCooldown > 0) fireCooldown -= delta;
+      if (grenadeCooldown > 0) grenadeCooldown -= delta;
+      if (dashCooldown > 0) dashCooldown -= delta;
+      if (dashTimer > 0) dashTimer -= delta;
+    }
+
+    function handleMovement(delta) {
+      const obj = controls.getObject();
+      const speedMultiplier = dashTimer > 0 ? 3.6 : 1.0;
+      const moveSpeed = moveSpeedBase * speedMultiplier;
+
+      let forward = 0;
+      let right = 0;
+
+      if (keys['KeyW']) forward += 1;
+      if (keys['KeyS']) forward -= 1;
+      if (keys['KeyA']) right -= 1;
+      if (keys['KeyD']) right += 1;
+
+      const len = Math.hypot(forward, right);
+      if (len > 0) {
+        forward /= len;
+        right /= len;
+      }
+
+      controls.moveForward(forward * moveSpeed * delta);
+      controls.moveRight(right * moveSpeed * delta);
+
+      // Gravity / jump
+      velocityY += gravity * delta;
+      obj.position.y += velocityY * delta;
+
+      const minY = 4; // "feet" position off ground
+      if (obj.position.y < minY) {
+        obj.position.y = minY;
+        velocityY = 0;
+        onGround = true;
+      }
+
+      // Keep player roughly on world
+      const half = worldSize * 0.45;
+      obj.position.x = THREE.MathUtils.clamp(obj.position.x, -half, half);
+      obj.position.z = THREE.MathUtils.clamp(obj.position.z, -half, half);
+    }
+
+    function updateTimer(delta) {
+      elapsedTime += delta;
+
+      // Difficulty scaling / waves
+      const waveBefore = wave;
+      wave = 1 + Math.floor(elapsedTime / 40); // new wave every 40 seconds
+      if (wave !== waveBefore) {
+        waveText.textContent = wave.toString();
+        // spawn a few new enemies with each wave
+        for (let i = 0; i < 2 + wave; i++) spawnEnemy();
+      }
+
+      const totalSeconds = Math.floor(elapsedTime);
+      const mins = Math.floor(totalSeconds / 60);
+      const secs = totalSeconds % 60;
+      timeText.textContent =
+        String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+    }
+
+    function updateSnow(delta) {
+      const positions = snowParticles.geometry.attributes.position;
+      const objPos = controls.getObject().position;
+
+      for (let i = 0; i < positions.count; i++) {
+        const ix = i * 3;
+        let x = positions.getX(i);
+        let y = positions.getY(i);
+        let z = positions.getZ(i);
+
+        y -= (5 + Math.random() * 4) * delta;
+
+        // Loop around player
+        if (y < 1) {
+          y = 120;
+          x = (Math.random() - 0.5) * 200;
+          z = (Math.random() - 0.5) * 200;
+        }
+
+        positions.setXYZ(i, x, y, z);
+      }
+      positions.needsUpdate = true;
+
+      // Move the whole particle system with player slowly for infinite feel
+      snowParticles.position.x = objPos.x * 0.4;
+      snowParticles.position.z = objPos.z * 0.4;
+    }
+
+    function updateEnemies(delta) {
+      const playerPos = controls.getObject().position;
+
+      enemies.forEach(enemy => {
+        const model = enemy.model;
+        const pos = model.position;
+
+        const dir = new THREE.Vector3().subVectors(playerPos, pos);
+        const dist = dir.length();
+
+        dir.y = 0; // stay on plane
+        dir.normalize();
+
+        // bobbing animation
+        const bob = Math.sin(elapsedTime * 6 + enemy.bobOffset) * 0.25;
+        model.children.forEach(child => {
+          child.position.y += bob * delta;
+        });
+
+        const aggressionRange = 200;
+        const baseSpeed = enemy.speed + (wave - 1) * 1.2;
+        const speed = dist < aggressionRange ? baseSpeed : baseSpeed * 0.4;
+
+        if (!shopOpen) {
+          model.position.addScaledVector(dir, speed * delta);
+        }
+
+        // Face player
+        const lookTarget = new THREE.Vector3(playerPos.x, model.position.y + 7, playerPos.z);
+        model.lookAt(lookTarget);
+
+        // Damage player if close
+        const hitRadius = 4.2;
+        if (dist < hitRadius) {
+          const dmg = 18 * delta * (1 + (wave - 1) * 0.15);
+          hp -= dmg;
+          if (hp <= 0) {
+            hp = 0;
+            endGame();
+          }
+          hpText.textContent = Math.round(hp).toString();
+          refreshHpColor();
+        }
+      });
+    }
+
+    function updateBullets(delta) {
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        b.life += delta;
+        if (b.life > 0.25) {
+          scene.remove(b.mesh);
+          bullets.splice(i, 1);
+          continue;
+        }
+        b.mesh.position.addScaledVector(b.dir, b.speed * delta);
+      }
+    }
+
+    function updateGrenades(delta) {
+      for (let i = grenades.length - 1; i >= 0; i--) {
+        const g = grenades[i];
+        g.life -= delta;
+        g.vel.y += gravity * 0.6 * delta;
+        g.mesh.position.addScaledVector(g.vel, delta);
+
+        // ground collision
+        const groundY = 0.3;
+        if (g.mesh.position.y <= groundY) {
+          g.mesh.position.y = groundY;
+          g.vel.y *= -0.3;
+          g.vel.multiplyScalar(0.7);
+        }
+
+        if (!g.exploded && g.life <= 0) {
+          explodeGrenade(g);
+        }
+
+        if (g.exploded && g.life <= -0.6) {
+          scene.remove(g.mesh);
+          grenades.splice(i, 1);
+          continue;
+        }
+      }
+    }
+
+    // -----------------------------
+    // GAME FLOW
+    // -----------------------------
+    function startGame() {
+      gameState = 'playing';
+      menuEl.style.display = 'none';
+      hudEl.style.display = 'flex';
+      crosshairEl.style.display = 'block';
+      gameoverEl.style.display = 'none';
+      shopEl.style.display = 'none';
+
+      elapsedTime = 0;
+      score = 0;
+      hp = 100;
+      ammo = 24;
+      grenadesCount = 3;
+      wave = 1;
+
+      timeText.textContent = '00:00';
+      scoreText.textContent = '0';
+      hpText.textContent = '100';
+      ammoText.textContent = '24';
+      grenadeText.textContent = '3';
+      waveText.textContent = '1';
+      refreshHpColor();
+
+      // Reset player position
+      const obj = controls.getObject();
+      obj.position.set(0, 6, 0);
+      velocityY = 0;
+      onGround = true;
+
+      // Clear enemies and respawn
+      enemies.splice(0, enemies.length);
+      while (enemyGroup.children.length > 0) {
+        enemyGroup.remove(enemyGroup.children[0]);
+      }
+      for (let i = 0; i < 10; i++) spawnEnemy();
+
+      // Clear bullets & grenades
+      bullets.forEach(b => scene.remove(b.mesh));
+      grenades.forEach(g => scene.remove(g.mesh));
+      bullets.length = 0;
+      grenades.length = 0;
+
+      controls.lock();
+    }
+
+    function endGame() {
+      if (gameState !== 'playing') return;
+      gameState = 'dead';
+      controls.unlock();
+
+      hudEl.style.display = 'none';
+      crosshairEl.style.display = 'none';
+      shopEl.style.display = 'none';
+      gameoverEl.style.display = 'flex';
+
+      finalScoreText.textContent = score.toString();
+      finalWaveText.textContent = wave.toString();
+
+      const totalSeconds = Math.floor(elapsedTime);
+      const mins = Math.floor(totalSeconds / 60);
+      const secs = totalSeconds % 60;
+      finalTimeText.textContent =
+        String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+    }
+
+    // -----------------------------
+    // MENU HANDLERS
+    // -----------------------------
+    startBtn.addEventListener('click', () => {
+      startGame();
+    });
+
+    howBtn.addEventListener('click', () => {
+      alert(
+        [
+          'Survive as long as possible in the snowfield.',
+          '- Enemies track you by line of sight and proximity.',
+          '- Score comes from damaging and killing enemies.',
+          '- Every ~40 seconds, a new wave spikes difficulty.',
+          '- Use B near ruins to quickly open shop while kiting.',
+          '',
+          'Hard rule: standing still = death.'
+        ].join('\n')
+      );
+    });
+
+    restartBtn.addEventListener('click', () => {
+      startGame();
+    });
+
+    // -----------------------------
+    // KICK OFF LOOP
+    // -----------------------------
+    animate();
+  </script>
+</body>
+</html>
